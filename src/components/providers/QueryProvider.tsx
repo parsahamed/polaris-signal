@@ -1,15 +1,14 @@
 "use client";
 
-import {
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
+  const [isMounted, setIsMounted] = useState(false);
+
   const [queryClient] = useState(() => {
     return new QueryClient({
       defaultOptions: {
@@ -23,7 +22,11 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     });
   });
 
-  if (typeof window === "undefined") {
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
     return (
       <QueryClientProvider client={queryClient}>
         {children}
@@ -45,7 +48,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+
+      {process.env.NODE_ENV === "development" ? (
+        <ReactQueryDevtools initialIsOpen={false} />
+      ) : null}
     </PersistQueryClientProvider>
   );
 }
