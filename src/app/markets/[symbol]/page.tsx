@@ -34,7 +34,7 @@ export default async function MarketPage({ params }: MarketPageProps) {
     notFound();
   }
 
-  const marketData = getMarketData(market.symbol);
+  const marketData = await getMarketData(market.symbol);
 
   if (!marketData) {
     return (

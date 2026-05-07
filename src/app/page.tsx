@@ -3,9 +3,9 @@ import { getActiveMarkets } from "@/lib/market-data/market-config.service";
 import { getMarketDataList } from "@/lib/market-data/market-data.service";
 import { analyzeMarket } from "@/lib/services/market-analysis.service";
 
-export default function Home() {
+export default async function Home() {
   const markets = getActiveMarkets();
-  const marketDataList = getMarketDataList(
+  const marketDataList = await getMarketDataList(
     markets.map((market) => {
       return market.symbol;
     })

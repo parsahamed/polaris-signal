@@ -1,5 +1,7 @@
-import { mockMarketData } from "@/lib/market-data/mock-market-data";
+import { MockMarketDataProvider } from "@/lib/market-data/mock-market-data.provider";
 
 export const getMockMarketData = async () => {
-  return mockMarketData;
+  const provider = new MockMarketDataProvider();
+
+  return provider.getMarketDataList(["BTC", "ETH", "USOON", "XAUT", "USDT_TMN"]);
 };
