@@ -11,4 +11,3 @@ export async function getCandles(input: {
 }
 // TODO: Add server-side cache for historical candles.
 // TODO: Add provider fallback chain: CoinGecko -> Wallex -> Mock.
-// TODO: Move large persisted candle data to IndexedDB if localStorage becomes too small.

@@ -3,8 +3,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+
+import {
+  createIndexedDbPersister,
+  QUERY_CACHE_STORAGE_KEY,
+} from "@/lib/query/indexeddb-persister";
 
 const subscribe = () => {
   return () => {};
@@ -18,7 +22,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [queryClient] = useState(() => {
-    return new QueryClient({
+    const client = new QueryClient({
       defaultOptions: {
         queries: {
           staleTime: 60_000,
@@ -28,9 +32,35 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         },
       },
     });
-  });
 
-  if (!isMounted) {
+    client.setQueryDefaults(["markets"], {
+      staleTime: 60_000,
+    });
+    client.setQueryDefaults(["candles"], {
+      // Candle history can grow large, so persisted cached candle data belongs
+      // in IndexedDB rather than localStorage.
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 60 * 24,
+      refetchOnWindowFocus: false,
+    });
+
+    return client;
+  });
+  const persister = useMemo(() => {
+    return isMounted ? createIndexedDbPersister() : null;
+  }, [isMounted]);
+
+  useEffect(() => {
+    if (!isMounted) {
+      return;
+    }
+
+    // localStorage was insufficient for scalable historical market data.
+    // Remove the old key once after moving persisted React Query cache to IndexedDB.
+    window.localStorage.removeItem(QUERY_CACHE_STORAGE_KEY);
+  }, [isMounted]);
+
+  if (!isMounted || !persister) {
     return (
       <QueryClientProvider client={queryClient}>
         {children}
@@ -38,17 +68,13 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const persister = createSyncStoragePersister({
-    storage: window.localStorage,
-    key: "polaris-signal-query-cache",
-  });
-
   return (
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{
         persister,
         maxAge: 1000 * 60 * 60 * 24,
+        buster: "v1",
       }}
     >
       {children}
