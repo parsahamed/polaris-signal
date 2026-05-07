@@ -10,4 +10,5 @@ export type {
   MarketAnalysisResult,
   PriceZone,
 } from "@/types/market-analysis.types";
+export type { MarketGridItem } from "@/types/market-view.types";
 export type { RiskLevel, Signal, SignalStatus } from "@/types/signal.types";

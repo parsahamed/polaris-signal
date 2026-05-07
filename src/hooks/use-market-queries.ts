@@ -12,6 +12,8 @@ export function useMarketsQuery() {
     queryKey: ["markets"],
     queryFn: fetchMarkets,
     staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnReconnect: true,
   });
 }
 

@@ -4,15 +4,16 @@ import { getCandles } from "@/lib/market-data/chart-data.service";
 import type { ChartTimeframe } from "@/types/chart.types";
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     symbol: string;
-  };
+  }>;
 }
 
 const allowedTimeframes: ChartTimeframe[] = ["1H", "4H", "1D", "1W"];
 
 export async function GET(request: Request, { params }: RouteParams) {
   const { searchParams } = new URL(request.url);
+  const { symbol } = await params;
   const timeframe = searchParams.get("timeframe") ?? "1D";
 
   if (!allowedTimeframes.includes(timeframe as ChartTimeframe)) {
@@ -23,7 +24,7 @@ export async function GET(request: Request, { params }: RouteParams) {
   }
 
   const candles = await getCandles({
-    symbol: params.symbol,
+    symbol,
     timeframe: timeframe as ChartTimeframe,
   });
 

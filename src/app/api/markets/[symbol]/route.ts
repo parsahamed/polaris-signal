@@ -5,13 +5,14 @@ import { getMarketData } from "@/lib/market-data/market-data.service";
 import { analyzeMarket } from "@/lib/services/market-analysis.service";
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     symbol: string;
-  };
+  }>;
 }
 
 export async function GET(_: Request, { params }: RouteParams) {
-  const market = getMarketBySymbol(params.symbol);
+  const { symbol } = await params;
+  const market = getMarketBySymbol(symbol);
 
   if (!market) {
     return NextResponse.json(
