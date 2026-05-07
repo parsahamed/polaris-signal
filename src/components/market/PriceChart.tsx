@@ -1,15 +1,12 @@
 "use client";
 
 import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  type TooltipContentProps,
-} from "recharts";
+  CandlestickSeries,
+  createChart,
+  type IChartApi,
+  type UTCTimestamp,
+} from "lightweight-charts";
+import { useEffect, useRef } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,28 +40,6 @@ const sourceDescriptions: Record<MarketDataSource, string> = {
   wallex: "local exchange price action",
 };
 
-function ChartTooltip({
-  active,
-  payload,
-  label,
-}: TooltipContentProps) {
-  if (!active || !payload?.length) {
-    return null;
-  }
-
-  const rawPrice = payload[0]?.value;
-  const price = Number(Array.isArray(rawPrice) ? rawPrice[0] : rawPrice);
-
-  return (
-    <div className="rounded-lg border border-border bg-background/95 px-3 py-2 text-sm shadow-sm">
-      <p className="text-muted-foreground">{label}</p>
-      <p className="mt-1 font-medium tabular-nums text-foreground">
-        {formatMarketNumber(price)}
-      </p>
-    </div>
-  );
-}
-
 export function PriceChart({
   symbol,
   pair,
@@ -75,96 +50,124 @@ export function PriceChart({
   source,
 }: PriceChartProps) {
   const isPositiveChange = change24h >= 0;
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+
+  useEffect(() => {
+    const container = chartContainerRef.current;
+
+    if (!container || data.length === 0) {
+      return;
+    }
+
+    const chart = createChart(container, {
+      autoSize: true,
+      height: 280,
+      layout: {
+        background: { color: "transparent" },
+        textColor: "#93c5fd",
+      },
+      grid: {
+        vertLines: { color: "rgba(148, 163, 184, 0.12)" },
+        horzLines: { color: "rgba(148, 163, 184, 0.12)" },
+      },
+      rightPriceScale: {
+        borderColor: "rgba(148, 163, 184, 0.2)",
+      },
+      timeScale: {
+        borderColor: "rgba(148, 163, 184, 0.2)",
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      crosshair: {
+        mode: 1,
+      },
+    });
+
+    const candlestickSeries = chart.addSeries(CandlestickSeries, {
+      upColor: "#22c55e",
+      downColor: "#ef4444",
+      borderUpColor: "#22c55e",
+      borderDownColor: "#ef4444",
+      wickUpColor: "#22c55e",
+      wickDownColor: "#ef4444",
+    });
+
+    candlestickSeries.setData(
+      data.map((candle) => {
+        return {
+          time: candle.time as UTCTimestamp,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+        };
+      }),
+    );
+
+    chart.timeScale().fitContent();
+    chartRef.current = chart;
+
+    return () => {
+      chart.remove();
+      chartRef.current = null;
+    };
+  }, [data]);
 
   return (
-    <Card className="border-border/70">
-      <CardHeader>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <CardTitle>{pair} Price Chart</CardTitle>
-            <CardDescription>
-              {symbol} {sourceDescriptions[source]}
-            </CardDescription>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {timeframes.map((timeframeOption) => (
-              <Button
-                key={timeframeOption}
-                variant={timeframeOption === timeframe ? "secondary" : "outline"}
-                size="xs"
-              >
-                {timeframeOption}
-              </Button>
-            ))}
-          </div>
+    <Card className="h-full">
+      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <CardTitle>{pair} Price Chart</CardTitle>
+          <CardDescription>
+            {symbol} {sourceDescriptions[source]}
+          </CardDescription>
+        </div>
+
+        <div className="flex gap-2">
+          {timeframes.map((timeframeOption) => (
+            <Button
+              key={timeframeOption}
+              size="sm"
+              variant={timeframeOption === timeframe ? "default" : "outline"}
+            >
+              {timeframeOption}
+            </Button>
+          ))}
         </div>
       </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+
+      <CardContent className="space-y-6">
+        <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-sm text-muted-foreground">Current price</p>
-            <p className="mt-1 text-3xl font-semibold tabular-nums">
+            <p className="mt-1 text-3xl font-semibold">
               {formatMarketNumber(price)}
             </p>
           </div>
+
           <Badge
-            variant="outline"
             className={cn(
-              "w-fit tabular-nums",
               isPositiveChange
-                ? "border-success/30 bg-success/15 text-success"
-                : "border-red-500/30 bg-red-500/15 text-red-300"
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                : "border-red-500/30 bg-red-500/10 text-red-300",
             )}
+            variant="outline"
           >
             {isPositiveChange ? "+" : ""}
             {change24h}%
           </Badge>
         </div>
 
-        <div className="h-72 rounded-lg border border-border bg-muted/20 p-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ left: 8, right: 8, top: 12 }}>
-              <CartesianGrid
-                stroke="var(--border)"
-                strokeDasharray="4 4"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="time"
-                axisLine={false}
-                tickLine={false}
-                minTickGap={28}
-                stroke="var(--muted-foreground)"
-                tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                width={64}
-                domain={["dataMin", "dataMax"]}
-                stroke="var(--muted-foreground)"
-                tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-                tickFormatter={(value) => {
-                  return formatMarketNumber(Number(value));
-                }}
-              />
-              <Tooltip
-                content={(props) => {
-                  return <ChartTooltip {...props} />;
-                }}
-                cursor={{ stroke: "var(--primary)", strokeOpacity: 0.35 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="close"
-                stroke="var(--primary)"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, fill: "var(--primary)" }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {data.length > 0 ? (
+          <div className="h-[280px] rounded-lg border bg-background/40 p-2">
+            <div ref={chartContainerRef} className="h-full w-full" />
+          </div>
+        ) : (
+          <div className="flex h-[280px] items-center justify-center rounded-lg border bg-background/40 text-sm text-muted-foreground">
+            No chart data available
+          </div>
+        )}
       </CardContent>
     </Card>
   );

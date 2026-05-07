@@ -1,5 +1,5 @@
 export interface CandlePoint {
-  time: string | number;
+  time: number;
   open: number;
   high: number;
   low: number;
