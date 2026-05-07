@@ -79,7 +79,12 @@ export default async function MarketPage({ params }: MarketPageProps) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex flex-col gap-6">
-          <PriceChartPlaceholder />
+          <PriceChartPlaceholder
+            symbol={market.symbol}
+            pair={market.pair}
+            price={analysis.price}
+            change24h={analysis.change24h}
+          />
           <WhySignal reasons={analysis.signal.reasons} />
         </div>
 
