@@ -7,3 +7,9 @@ export interface MarketGridItem {
   marketData: MarketData;
   analysis: MarketAnalysisResult;
 }
+
+export interface MarketDetailView {
+  market: Market;
+  marketData: MarketData;
+  analysis: MarketAnalysisResult;
+}

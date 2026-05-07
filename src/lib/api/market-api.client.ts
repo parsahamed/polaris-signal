@@ -1,5 +1,8 @@
 import type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
-import type { MarketGridItem } from "@/types/market-view.types";
+import type {
+  MarketDetailView,
+  MarketGridItem,
+} from "@/types/market-view.types";
 
 export async function fetchMarkets(): Promise<MarketGridItem[]> {
   const response = await fetch("/api/markets");
@@ -11,14 +14,16 @@ export async function fetchMarkets(): Promise<MarketGridItem[]> {
   return response.json() as Promise<MarketGridItem[]>;
 }
 
-export async function fetchMarketDetail(symbol: string) {
+export async function fetchMarketDetail(
+  symbol: string,
+): Promise<MarketDetailView> {
   const response = await fetch(`/api/markets/${symbol}`);
 
   if (!response.ok) {
     throw new Error("Failed to fetch market detail");
   }
 
-  return response.json();
+  return response.json() as Promise<MarketDetailView>;
 }
 
 export async function fetchMarketCandles(

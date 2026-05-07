@@ -30,6 +30,9 @@ interface PriceChartProps {
   data: CandlePoint[];
   timeframe: ChartTimeframe;
   source: MarketDataSource;
+  onTimeframeChange: (timeframe: ChartTimeframe) => void;
+  isLoading?: boolean;
+  isFetching?: boolean;
 }
 
 const timeframes: ChartTimeframe[] = ["1H", "4H", "1D", "1W"];
@@ -48,6 +51,9 @@ export function PriceChart({
   data,
   timeframe,
   source,
+  onTimeframeChange,
+  isLoading = false,
+  isFetching = false,
 }: PriceChartProps) {
   const isPositiveChange = change24h >= 0;
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
@@ -130,6 +136,9 @@ export function PriceChart({
               key={timeframeOption}
               size="sm"
               variant={timeframeOption === timeframe ? "default" : "outline"}
+              onClick={() => {
+                onTimeframeChange(timeframeOption);
+              }}
             >
               {timeframeOption}
             </Button>
@@ -159,7 +168,15 @@ export function PriceChart({
           </Badge>
         </div>
 
-        {data.length > 0 ? (
+        {isFetching ? (
+          <p className="text-xs text-muted-foreground">Updating chart...</p>
+        ) : null}
+
+        {isLoading ? (
+          <div className="flex h-[280px] items-center justify-center rounded-lg border bg-background/40 text-sm text-muted-foreground">
+            Loading chart data...
+          </div>
+        ) : data.length > 0 ? (
           <div className="h-[280px] rounded-lg border bg-background/40 p-2">
             <div ref={chartContainerRef} className="h-full w-full" />
           </div>
