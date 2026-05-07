@@ -1,1 +1,1 @@
-export type SignalStatus = "bullish" | "neutral" | "bearish" | "danger";
+export type { RiskLevel, Signal, SignalStatus } from "@/types/signal.types";

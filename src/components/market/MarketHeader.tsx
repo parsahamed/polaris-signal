@@ -8,19 +8,19 @@ import {
 import {
   formatMarketNumber,
   signalLabels,
-  type MockSignalStatus,
 } from "@/lib/market-data/mock-market-metrics";
 import { cn } from "@/lib/utils";
 import type { Market } from "@/types/market.types";
+import type { SignalStatus } from "@/types/signal.types";
 
 interface MarketHeaderProps {
   market: Market;
   price: number;
   change24h: number;
-  signal: MockSignalStatus;
+  signal: SignalStatus;
 }
 
-const signalClasses: Record<MockSignalStatus, string> = {
+const signalClasses: Record<SignalStatus, string> = {
   bullish: "border-success/30 bg-success/15 text-success",
   neutral: "border-border bg-secondary text-secondary-foreground",
   bearish: "border-red-500/30 bg-red-500/15 text-red-300",

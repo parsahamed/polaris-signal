@@ -9,27 +9,28 @@ import {
 } from "@/components/ui/card";
 import {
   formatMarketNumber,
-  generateMockMarketMetrics,
   signalLabels,
-  type MockSignalStatus,
 } from "@/lib/market-data/mock-market-metrics";
 import { cn } from "@/lib/utils";
+import type { MarketAnalysisResult } from "@/types/market-analysis.types";
 import type { Market } from "@/types/market.types";
+import type { SignalStatus } from "@/types/signal.types";
 
 interface MarketCardProps {
   market: Market;
+  analysis: MarketAnalysisResult;
 }
 
-const signalClasses: Record<MockSignalStatus, string> = {
+const signalClasses: Record<SignalStatus, string> = {
   bullish: "border-success/30 bg-success/15 text-success",
   neutral: "border-border bg-secondary text-secondary-foreground",
   bearish: "border-red-500/30 bg-red-500/15 text-red-300",
   danger: "",
 };
 
-export function MarketCard({ market }: MarketCardProps) {
-  const metrics = generateMockMarketMetrics(market);
-  const isPositiveChange = metrics.change24h >= 0;
+export function MarketCard({ market, analysis }: MarketCardProps) {
+  const isPositiveChange = analysis.change24h >= 0;
+  const signalStatus = analysis.signal.status;
 
   return (
     <Link
@@ -46,10 +47,10 @@ export function MarketCard({ market }: MarketCardProps) {
               </p>
             </div>
             <Badge
-              variant={metrics.signal === "danger" ? "destructive" : "outline"}
-              className={cn(signalClasses[metrics.signal])}
+              variant={signalStatus === "danger" ? "destructive" : "outline"}
+              className={cn(signalClasses[signalStatus])}
             >
-              {signalLabels[metrics.signal]}
+              {signalLabels[signalStatus]}
             </Badge>
           </div>
         </CardHeader>
@@ -57,7 +58,7 @@ export function MarketCard({ market }: MarketCardProps) {
           <div>
             <p className="text-xs uppercase text-muted-foreground">Price</p>
             <p className="mt-1 text-2xl font-semibold tabular-nums">
-              {formatMarketNumber(metrics.price)}
+              {formatMarketNumber(analysis.price)}
             </p>
           </div>
 
@@ -71,19 +72,19 @@ export function MarketCard({ market }: MarketCardProps) {
                 )}
               >
                 {isPositiveChange ? "+" : ""}
-                {metrics.change24h}%
+                {analysis.change24h}%
               </p>
             </div>
             <div>
               <p className="text-muted-foreground">Support</p>
               <p className="mt-1 font-medium tabular-nums">
-                {formatMarketNumber(metrics.support)}
+                {formatMarketNumber(analysis.zones.support)}
               </p>
             </div>
             <div>
               <p className="text-muted-foreground">Resistance</p>
               <p className="mt-1 font-medium tabular-nums">
-                {formatMarketNumber(metrics.resistance)}
+                {formatMarketNumber(analysis.zones.resistance)}
               </p>
             </div>
             <div>

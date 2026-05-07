@@ -1,15 +1,25 @@
 import { MarketCard } from "@/components/dashboard/MarketCard";
+import type { MarketAnalysisResult } from "@/types/market-analysis.types";
 import type { Market } from "@/types/market.types";
 
-interface MarketGridProps {
-  markets: Market[];
+export interface MarketGridItem {
+  market: Market;
+  analysis: MarketAnalysisResult;
 }
 
-export function MarketGrid({ markets }: MarketGridProps) {
+interface MarketGridProps {
+  items: MarketGridItem[];
+}
+
+export function MarketGrid({ items }: MarketGridProps) {
   return (
     <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-      {markets.map((market) => (
-        <MarketCard key={market.symbol} market={market} />
+      {items.map((item) => (
+        <MarketCard
+          key={item.market.symbol}
+          market={item.market}
+          analysis={item.analysis}
+        />
       ))}
     </section>
   );
