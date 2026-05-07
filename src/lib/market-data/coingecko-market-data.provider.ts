@@ -9,7 +9,6 @@ const COINGECKO_IDS_BY_SYMBOL: Record<string, string> = {
   BTC: "bitcoin",
   ETH: "ethereum",
   XAUT: "tether-gold",
-  USDT_TMN: "tether",
 };
 
 const MOCK_ONLY_SYMBOLS = new Set(["USOON"]);
@@ -109,6 +108,10 @@ export class CoinGeckoMarketDataProvider implements MarketDataProvider {
       url.searchParams.set("include_24hr_change", "true");
       url.searchParams.set("include_24hr_vol", "true");
 
+      if (process.env.NODE_ENV === "development") {
+        console.log("[CoinGecko] Fetching:", url.toString());
+      }
+
       // CoinGecko is used only for MVP market data and can be swapped later.
       const response = await fetch(url, {
         cache: "no-store",
@@ -139,6 +142,8 @@ export class CoinGeckoMarketDataProvider implements MarketDataProvider {
             price: roundMarketNumber(pricePoint.usd),
             change24h: roundMarketNumber(pricePoint.usd_24h_change ?? 0),
             updatedAt,
+            source: "coingecko",
+            quoteCurrency: "USD",
           };
 
           if (typeof pricePoint.usd_24h_vol === "number") {

@@ -14,7 +14,7 @@ import {
 } from "@/lib/market-data/mock-market-metrics";
 import { cn } from "@/lib/utils";
 import type { MarketAnalysisResult } from "@/types/market-analysis.types";
-import type { MarketData } from "@/types/market-data.types";
+import type { MarketData, MarketDataSource } from "@/types/market-data.types";
 import type { Market } from "@/types/market.types";
 import type { SignalStatus } from "@/types/signal.types";
 
@@ -31,6 +31,12 @@ const signalClasses: Record<SignalStatus, string> = {
   danger: "",
 };
 
+const sourceLabels: Record<MarketDataSource, string> = {
+  coingecko: "CoinGecko",
+  mock: "Mock",
+  wallex: "Wallex",
+};
+
 export function MarketCard({ market, marketData, analysis }: MarketCardProps) {
   const isPositiveChange = analysis.change24h >= 0;
   const signalStatus = analysis.signal.status;
@@ -45,9 +51,15 @@ export function MarketCard({ market, marketData, analysis }: MarketCardProps) {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <CardTitle className="truncate">{market.name}</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {market.pair}
-              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <p className="text-sm text-muted-foreground">{market.pair}</p>
+                <Badge
+                  variant="outline"
+                  className="border-border/70 bg-muted/40 px-2 py-0 text-[10px] font-normal uppercase tracking-normal text-muted-foreground"
+                >
+                  Source: {sourceLabels[marketData.source]}
+                </Badge>
+              </div>
             </div>
             <Badge
               variant={signalStatus === "danger" ? "destructive" : "outline"}

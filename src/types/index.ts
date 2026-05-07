@@ -1,6 +1,10 @@
 export type { ChartPoint } from "@/types/chart.types";
 export type { Market, MarketCategory } from "@/types/market.types";
-export type { MarketData } from "@/types/market-data.types";
+export type {
+  MarketData,
+  MarketDataSource,
+  MarketQuoteCurrency,
+} from "@/types/market-data.types";
 export type {
   MarketAnalysisInput,
   MarketAnalysisResult,

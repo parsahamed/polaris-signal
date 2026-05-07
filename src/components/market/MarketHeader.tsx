@@ -10,6 +10,7 @@ import {
   signalLabels,
 } from "@/lib/market-data/mock-market-metrics";
 import { cn } from "@/lib/utils";
+import type { MarketDataSource } from "@/types/market-data.types";
 import type { Market } from "@/types/market.types";
 import type { SignalStatus } from "@/types/signal.types";
 
@@ -18,6 +19,7 @@ interface MarketHeaderProps {
   price: number;
   change24h: number;
   signal: SignalStatus;
+  source: MarketDataSource;
 }
 
 const signalClasses: Record<SignalStatus, string> = {
@@ -27,11 +29,18 @@ const signalClasses: Record<SignalStatus, string> = {
   danger: "",
 };
 
+const sourceLabels: Record<MarketDataSource, string> = {
+  coingecko: "CoinGecko",
+  mock: "Mock",
+  wallex: "Wallex",
+};
+
 export function MarketHeader({
   market,
   price,
   change24h,
   signal,
+  source,
 }: MarketHeaderProps) {
   const isPositiveChange = change24h >= 0;
 
@@ -41,7 +50,15 @@ export function MarketHeader({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="text-3xl">{market.name}</CardTitle>
-            <p className="mt-2 text-sm text-muted-foreground">{market.pair}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">{market.pair}</p>
+              <Badge
+                variant="outline"
+                className="border-border/70 bg-muted/40 px-2 py-0 text-[10px] font-normal uppercase tracking-normal text-muted-foreground"
+              >
+                Source: {sourceLabels[source]}
+              </Badge>
+            </div>
           </div>
           <Badge
             variant={signal === "danger" ? "destructive" : "outline"}

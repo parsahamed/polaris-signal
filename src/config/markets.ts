@@ -37,13 +37,4 @@ export const defaultMarkets: Market[] = [
     category: "gold",
     isActive: true,
   },
-  {
-    symbol: "USDT_TMN",
-    name: "Tether Toman",
-    pair: "USDT/TMN",
-    baseAsset: "USDT",
-    quoteAsset: "TMN",
-    category: "iran-market",
-    isActive: true,
-  },
 ];

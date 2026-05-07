@@ -77,6 +77,7 @@ export default async function MarketPage({ params }: MarketPageProps) {
         price={analysis.price}
         change24h={analysis.change24h}
         signal={analysis.signal.status}
+        source={marketData.source}
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
