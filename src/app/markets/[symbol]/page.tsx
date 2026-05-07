@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { MarketHeader } from "@/components/market/MarketHeader";
-import { PriceChartPlaceholder } from "@/components/market/PriceChartPlaceholder";
+import { PriceChart } from "@/components/market/PriceChart";
 import { SignalPanel } from "@/components/market/SignalPanel";
 import { SupportResistance } from "@/components/market/SupportResistance";
 import { WhySignal } from "@/components/market/WhySignal";
@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getMockChartData } from "@/lib/market-data/mock-chart-data";
 import { getMarketBySymbol } from "@/lib/market-data/market-config.service";
 import { getMarketData } from "@/lib/market-data/market-data.service";
 import { analyzeMarket } from "@/lib/services/market-analysis.service";
@@ -62,6 +63,7 @@ export default async function MarketPage({ params }: MarketPageProps) {
     change24h: marketData.change24h,
     volume: marketData.volume24h,
   });
+  const chartData = getMockChartData(market.symbol);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-10">
@@ -79,11 +81,12 @@ export default async function MarketPage({ params }: MarketPageProps) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex flex-col gap-6">
-          <PriceChartPlaceholder
+          <PriceChart
             symbol={market.symbol}
             pair={market.pair}
             price={analysis.price}
             change24h={analysis.change24h}
+            data={chartData}
           />
           <WhySignal reasons={analysis.signal.reasons} />
         </div>
