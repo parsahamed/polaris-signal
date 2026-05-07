@@ -1,13 +1,40 @@
 import { MarketGrid } from "@/components/dashboard/MarketGrid";
 import { getActiveMarkets } from "@/lib/market-data/market-config.service";
-import { generateMockMarketAnalysis } from "@/lib/market-data/mock-market-metrics";
+import { getMarketDataList } from "@/lib/market-data/market-data.service";
+import { analyzeMarket } from "@/lib/services/market-analysis.service";
 
 export default function Home() {
   const markets = getActiveMarkets();
-  const items = markets.map((market) => ({
-    market,
-    analysis: generateMockMarketAnalysis(market),
-  }));
+  const marketDataList = getMarketDataList(
+    markets.map((market) => {
+      return market.symbol;
+    })
+  );
+  const marketDataBySymbol = new Map(
+    marketDataList.map((marketData) => {
+      return [marketData.symbol, marketData];
+    })
+  );
+  const items = markets.flatMap((market) => {
+    const marketData = marketDataBySymbol.get(market.symbol);
+
+    if (!marketData) {
+      return [];
+    }
+
+    return [
+      {
+        market,
+        marketData,
+        analysis: analyzeMarket({
+          symbol: marketData.symbol,
+          price: marketData.price,
+          change24h: marketData.change24h,
+          volume: marketData.volume24h,
+        }),
+      },
+    ];
+  });
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-10">

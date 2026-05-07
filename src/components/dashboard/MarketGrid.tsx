@@ -1,9 +1,11 @@
 import { MarketCard } from "@/components/dashboard/MarketCard";
 import type { MarketAnalysisResult } from "@/types/market-analysis.types";
+import type { MarketData } from "@/types/market-data.types";
 import type { Market } from "@/types/market.types";
 
 export interface MarketGridItem {
   market: Market;
+  marketData: MarketData;
   analysis: MarketAnalysisResult;
 }
 
@@ -18,6 +20,7 @@ export function MarketGrid({ items }: MarketGridProps) {
         <MarketCard
           key={item.market.symbol}
           market={item.market}
+          marketData={item.marketData}
           analysis={item.analysis}
         />
       ))}

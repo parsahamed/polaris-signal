@@ -9,15 +9,18 @@ import {
 } from "@/components/ui/card";
 import {
   formatMarketNumber,
+  formatUpdatedAt,
   signalLabels,
 } from "@/lib/market-data/mock-market-metrics";
 import { cn } from "@/lib/utils";
 import type { MarketAnalysisResult } from "@/types/market-analysis.types";
+import type { MarketData } from "@/types/market-data.types";
 import type { Market } from "@/types/market.types";
 import type { SignalStatus } from "@/types/signal.types";
 
 interface MarketCardProps {
   market: Market;
+  marketData: MarketData;
   analysis: MarketAnalysisResult;
 }
 
@@ -28,7 +31,7 @@ const signalClasses: Record<SignalStatus, string> = {
   danger: "",
 };
 
-export function MarketCard({ market, analysis }: MarketCardProps) {
+export function MarketCard({ market, marketData, analysis }: MarketCardProps) {
   const isPositiveChange = analysis.change24h >= 0;
   const signalStatus = analysis.signal.status;
 
@@ -92,6 +95,9 @@ export function MarketCard({ market, analysis }: MarketCardProps) {
               <p className="mt-1 font-medium">{market.baseAsset}</p>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Updated {formatUpdatedAt(marketData.updatedAt)}
+          </p>
         </CardContent>
       </Card>
     </Link>

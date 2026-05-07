@@ -1,4 +1,1 @@
-export interface MarketData {
-  symbol: string;
-  price: number;
-}
+export type { MarketData } from "@/types/market-data.types";
