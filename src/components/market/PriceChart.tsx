@@ -22,17 +22,26 @@ import {
 } from "@/components/ui/card";
 import { formatMarketNumber } from "@/lib/market-data/mock-market-metrics";
 import { cn } from "@/lib/utils";
-import type { ChartPoint } from "@/types/chart.types";
+import type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
+import type { MarketDataSource } from "@/types/market-data.types";
 
 interface PriceChartProps {
   symbol: string;
   pair: string;
   price: number;
   change24h: number;
-  data: ChartPoint[];
+  data: CandlePoint[];
+  timeframe: ChartTimeframe;
+  source: MarketDataSource;
 }
 
-const timeframes = ["1H", "4H", "1D", "1W"];
+const timeframes: ChartTimeframe[] = ["1H", "4H", "1D", "1W"];
+
+const sourceDescriptions: Record<MarketDataSource, string> = {
+  coingecko: "real market price action",
+  mock: "mock fallback price action",
+  wallex: "local exchange price action",
+};
 
 function ChartTooltip({
   active,
@@ -62,6 +71,8 @@ export function PriceChart({
   price,
   change24h,
   data,
+  timeframe,
+  source,
 }: PriceChartProps) {
   const isPositiveChange = change24h >= 0;
 
@@ -71,16 +82,18 @@ export function PriceChart({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <CardTitle>{pair} Price Chart</CardTitle>
-            <CardDescription>{symbol} mock 24-hour price action</CardDescription>
+            <CardDescription>
+              {symbol} {sourceDescriptions[source]}
+            </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
-            {timeframes.map((timeframe) => (
+            {timeframes.map((timeframeOption) => (
               <Button
-                key={timeframe}
-                variant={timeframe === "1D" ? "secondary" : "outline"}
+                key={timeframeOption}
+                variant={timeframeOption === timeframe ? "secondary" : "outline"}
                 size="xs"
               >
-                {timeframe}
+                {timeframeOption}
               </Button>
             ))}
           </div>
@@ -143,7 +156,7 @@ export function PriceChart({
               />
               <Line
                 type="monotone"
-                dataKey="price"
+                dataKey="close"
                 stroke="var(--primary)"
                 strokeWidth={2}
                 dot={false}

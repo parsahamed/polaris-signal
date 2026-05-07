@@ -15,10 +15,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getMockChartData } from "@/lib/market-data/mock-chart-data";
+import { getCandles } from "@/lib/market-data/chart-data.service";
 import { getMarketBySymbol } from "@/lib/market-data/market-config.service";
 import { getMarketData } from "@/lib/market-data/market-data.service";
 import { analyzeMarket } from "@/lib/services/market-analysis.service";
+import type { ChartTimeframe } from "@/types/chart.types";
 
 interface MarketPageProps {
   params: Promise<{
@@ -63,7 +64,11 @@ export default async function MarketPage({ params }: MarketPageProps) {
     change24h: marketData.change24h,
     volume: marketData.volume24h,
   });
-  const chartData = getMockChartData(market.symbol);
+  const timeframe: ChartTimeframe = "1D";
+  const chartData = await getCandles({
+    symbol: market.symbol,
+    timeframe,
+  });
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-10">
@@ -88,6 +93,8 @@ export default async function MarketPage({ params }: MarketPageProps) {
             price={analysis.price}
             change24h={analysis.change24h}
             data={chartData}
+            timeframe={timeframe}
+            source={marketData.source}
           />
           <WhySignal reasons={analysis.signal.reasons} />
         </div>

@@ -1,4 +1,4 @@
-export type { ChartPoint } from "@/types/chart.types";
+export type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
 export type { Market, MarketCategory } from "@/types/market.types";
 export type {
   MarketData,
