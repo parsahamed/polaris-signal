@@ -22,14 +22,6 @@ function roundPrice(value: number): number {
   return Math.round(value * multiplier) / multiplier;
 }
 
-function formatMockTime(index: number, timeframe: ChartTimeframe): string {
-  if (timeframe === "1W") {
-    return `D${index + 1}`;
-  }
-
-  return `${String(index).padStart(2, "0")}:00`;
-}
-
 export class MockChartDataProvider implements ChartDataProvider {
   async getCandles(input: {
     symbol: string;
@@ -43,6 +35,9 @@ export class MockChartDataProvider implements ChartDataProvider {
     const seed = getSymbolSeed(normalizedSymbol);
     const pointCount = POINTS_BY_TIMEFRAME[input.timeframe];
     const direction = seed % 2 === 0 ? 1 : -1;
+    const intervalSeconds = input.timeframe === "1W" ? 21600 : 3600;
+    const startTime =
+      Math.floor(Date.now() / 1000) - (pointCount - 1) * intervalSeconds;
 
     return Array.from({ length: pointCount }, (_, index) => {
       const wave = Math.sin((index + seed) * 0.62) * 0.012;
@@ -54,7 +49,7 @@ export class MockChartDataProvider implements ChartDataProvider {
       const low = Math.min(open, close) * 0.994;
 
       return {
-        time: formatMockTime(index, input.timeframe),
+        time: startTime + index * intervalSeconds,
         open: roundPrice(open),
         high: roundPrice(high),
         low: roundPrice(low),

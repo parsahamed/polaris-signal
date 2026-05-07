@@ -30,25 +30,6 @@ function roundPrice(value: number): number {
   return Math.round(value * multiplier) / multiplier;
 }
 
-function formatCandleTime(timestamp: number, timeframe: ChartTimeframe): string {
-  const date = new Date(timestamp);
-
-  if (timeframe === "1W") {
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      timeZone: "UTC",
-    });
-  }
-
-  return date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "UTC",
-  });
-}
-
 export class CoinGeckoChartDataProvider implements ChartDataProvider {
   private readonly fallbackProvider: ChartDataProvider;
 
@@ -91,7 +72,7 @@ export class CoinGeckoChartDataProvider implements ChartDataProvider {
       const payload = (await response.json()) as CoinGeckoOhlcPoint[];
       const candles = payload.map(([timestamp, open, high, low, close]) => {
         return {
-          time: formatCandleTime(timestamp, input.timeframe),
+          time: Math.floor(timestamp / 1000),
           open: roundPrice(open),
           high: roundPrice(high),
           low: roundPrice(low),
