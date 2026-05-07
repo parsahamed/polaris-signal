@@ -1,0 +1,31 @@
+import { NextResponse } from "next/server";
+
+import { getCandles } from "@/lib/market-data/chart-data.service";
+import type { ChartTimeframe } from "@/types/chart.types";
+
+interface RouteParams {
+  params: {
+    symbol: string;
+  };
+}
+
+const allowedTimeframes: ChartTimeframe[] = ["1H", "4H", "1D", "1W"];
+
+export async function GET(request: Request, { params }: RouteParams) {
+  const { searchParams } = new URL(request.url);
+  const timeframe = searchParams.get("timeframe") ?? "1D";
+
+  if (!allowedTimeframes.includes(timeframe as ChartTimeframe)) {
+    return NextResponse.json(
+      { message: "Invalid timeframe" },
+      { status: 400 },
+    );
+  }
+
+  const candles = await getCandles({
+    symbol: params.symbol,
+    timeframe: timeframe as ChartTimeframe,
+  });
+
+  return NextResponse.json(candles);
+}
