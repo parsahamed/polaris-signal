@@ -67,13 +67,14 @@ export class BinanceChartDataProvider implements ChartDataProvider {
     const payload = (await response.json()) as BinanceKline[];
 
     return payload
-      .map(([openTime, open, high, low, close]) => {
+      .map(([openTime, open, high, low, close, volume]) => {
         return {
           time: Math.floor(openTime / 1000),
           open: parseNumber(open),
           high: parseNumber(high),
           low: parseNumber(low),
           close: parseNumber(close),
+          volume: parseNumber(volume),
           source: "binance" as const,
         };
       })

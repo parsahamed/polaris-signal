@@ -6,6 +6,7 @@ export interface CandlePoint {
   high: number;
   low: number;
   close: number;
+  volume?: number;
   source?: CandleDataSource;
 }
 

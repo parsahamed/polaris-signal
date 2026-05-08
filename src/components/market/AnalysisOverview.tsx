@@ -16,6 +16,10 @@ function formatOptionalPrice(value: number | undefined): string {
   return value === undefined ? "Unavailable" : formatMarketNumber(value);
 }
 
+function formatLabel(value: string): string {
+  return value.replaceAll("-", " ");
+}
+
 export function AnalysisOverview({ analysis }: AnalysisOverviewProps) {
   return (
     <Card className="border-border/70">
@@ -23,6 +27,10 @@ export function AnalysisOverview({ analysis }: AnalysisOverviewProps) {
         <CardTitle>Technical Analysis</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
+        <p className="rounded-md border border-border/70 bg-muted/20 p-3 text-muted-foreground">
+          {analysis.summary}
+        </p>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-muted-foreground">Trend</p>
@@ -32,6 +40,33 @@ export function AnalysisOverview({ analysis }: AnalysisOverviewProps) {
             <p className="text-muted-foreground">Volatility</p>
             <p className="mt-1 font-medium capitalize">
               {analysis.volatility}
+            </p>
+          </div>
+        </div>
+        <Separator />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-muted-foreground">Market structure</p>
+            <p className="mt-1 font-medium capitalize">
+              {formatLabel(analysis.marketStructure.structure)}
+            </p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Trend strength</p>
+            <p className="mt-1 font-medium capitalize">
+              {analysis.trendStrength.strength} ({analysis.trendStrength.score})
+            </p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Breakout</p>
+            <p className="mt-1 font-medium capitalize">
+              {formatLabel(analysis.breakout.direction)}
+            </p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Volume</p>
+            <p className="mt-1 font-medium capitalize">
+              {analysis.volume.confirmation}
             </p>
           </div>
         </div>

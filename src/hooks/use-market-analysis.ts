@@ -3,10 +3,14 @@
 import { useMemo } from "react";
 
 import { analyzeCandles } from "@/lib/analysis/market-analysis.engine";
-import type { CandlePoint } from "@/types/chart.types";
+import type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
 
-export function useMarketAnalysis(symbol: string, candles: CandlePoint[]) {
+export function useMarketAnalysis(
+  symbol: string,
+  candles: CandlePoint[],
+  timeframe: ChartTimeframe,
+) {
   return useMemo(() => {
-    return analyzeCandles({ symbol, candles });
-  }, [symbol, candles]);
+    return analyzeCandles({ symbol, candles, timeframe });
+  }, [symbol, candles, timeframe]);
 }

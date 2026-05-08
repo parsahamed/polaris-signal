@@ -66,13 +66,14 @@ export class OkxChartDataProvider implements ChartDataProvider {
     }
 
     return payload.data
-      .map(([timestamp, open, high, low, close]) => {
+      .map(([timestamp, open, high, low, close, volume]) => {
         return {
           time: Math.floor(Number(timestamp) / 1000),
           open: parseNumber(open),
           high: parseNumber(high),
           low: parseNumber(low),
           close: parseNumber(close),
+          volume: volume ? parseNumber(volume) : undefined,
           source: "okx" as const,
         };
       })

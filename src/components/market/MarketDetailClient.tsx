@@ -60,7 +60,15 @@ function riskLevelFromVolatility(
 }
 
 function signalFromAnalysis(analysis: MarketTechnicalAnalysis): Signal {
-  if (analysis.currentPrice === 0) {
+  const { breakout, currentPrice, marketStructure, movingAverages } = analysis;
+  const isInsufficient =
+    currentPrice === 0 ||
+    marketStructure.structure === "insufficient-data";
+  const priceBelowSupport =
+    analysis.supportResistance.support !== undefined &&
+    currentPrice < analysis.supportResistance.support;
+
+  if (isInsufficient) {
     return {
       status: "neutral",
       confidence: 0,
@@ -69,19 +77,48 @@ function signalFromAnalysis(analysis: MarketTechnicalAnalysis): Signal {
     };
   }
 
-  if (analysis.trend === "bullish") {
+  if (
+    (breakout.direction === "breakout-down" &&
+      analysis.volatility === "high") ||
+    (priceBelowSupport &&
+      marketStructure.structure === "lower-highs-lower-lows")
+  ) {
+    return {
+      status: "danger",
+      confidence: 80,
+      riskLevel: "high",
+      reasons: analysis.reasons,
+    };
+  }
+
+  if (
+    analysis.trend === "bullish" &&
+    marketStructure.structure === "higher-highs-higher-lows" &&
+    (breakout.direction === "breakout-up" ||
+      (movingAverages.sma25 !== undefined &&
+        currentPrice > movingAverages.sma25)) &&
+    analysis.volume.confirmation !== "weak"
+  ) {
     return {
       status: "bullish",
-      confidence: analysis.volatility === "high" ? 60 : 70,
+      confidence:
+        analysis.trendStrength.strength === "strong" ? 78 : 68,
       riskLevel: riskLevelFromVolatility(analysis.volatility),
       reasons: analysis.reasons,
     };
   }
 
-  if (analysis.trend === "bearish") {
+  if (
+    analysis.trend === "bearish" &&
+    marketStructure.structure === "lower-highs-lower-lows" &&
+    (breakout.direction === "breakout-down" ||
+      (movingAverages.sma25 !== undefined &&
+        currentPrice < movingAverages.sma25))
+  ) {
     return {
       status: "bearish",
-      confidence: analysis.volatility === "high" ? 60 : 70,
+      confidence:
+        analysis.trendStrength.strength === "strong" ? 78 : 68,
       riskLevel: riskLevelFromVolatility(analysis.volatility),
       reasons: analysis.reasons,
     };
@@ -89,7 +126,7 @@ function signalFromAnalysis(analysis: MarketTechnicalAnalysis): Signal {
 
   return {
     status: "neutral",
-    confidence: 50,
+    confidence: analysis.trendStrength.strength === "weak" ? 45 : 55,
     riskLevel: riskLevelFromVolatility(analysis.volatility),
     reasons: analysis.reasons,
   };
@@ -112,7 +149,7 @@ export function MarketDetailClient({ symbol }: MarketDetailClientProps) {
       return Number(first.time) - Number(second.time);
     });
   }, [candlesQuery.data]);
-  const technicalAnalysis = useMarketAnalysis(symbol, candles);
+  const technicalAnalysis = useMarketAnalysis(symbol, candles, timeframe);
   const technicalSignal = useMemo(() => {
     return signalFromAnalysis(technicalAnalysis);
   }, [technicalAnalysis]);

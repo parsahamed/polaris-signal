@@ -1,9 +1,19 @@
 export type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
 export type {
   MarketTechnicalAnalysis,
+  MarketStructure,
+  MarketStructureAnalysis,
   MovingAverageAnalysis,
+  BreakoutAnalysis,
+  BreakoutDirection,
   SupportResistanceAnalysis,
+  SwingPoint,
+  TimeframeAnalysisSummary,
+  TrendStrength,
+  TrendStrengthAnalysis,
   TrendAnalysis,
+  VolumeAnalysis,
+  VolumeConfirmation,
 } from "@/types/analysis.types";
 export type { Market, MarketCategory } from "@/types/market.types";
 export type {

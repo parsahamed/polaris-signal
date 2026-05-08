@@ -1,13 +1,19 @@
+import { detectBreakout } from "@/lib/analysis/indicators/breakout";
+import { analyzeMarketStructure } from "@/lib/analysis/indicators/market-structure";
 import { calculateSMA } from "@/lib/analysis/indicators/sma";
 import { detectSupportResistance } from "@/lib/analysis/indicators/support-resistance";
 import { detectTrend } from "@/lib/analysis/indicators/trend";
+import { calculateTrendStrength } from "@/lib/analysis/indicators/trend-strength";
+import { analyzeVolumeConfirmation } from "@/lib/analysis/indicators/volume-confirmation";
 import { calculateVolatility } from "@/lib/analysis/indicators/volatility";
+import { summarizeTimeframeAnalysis } from "@/lib/analysis/timeframe-summary";
 import type { MarketTechnicalAnalysis } from "@/types/analysis.types";
-import type { CandlePoint } from "@/types/chart.types";
+import type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
 
 interface AnalyzeCandlesInput {
   symbol: string;
   candles: CandlePoint[];
+  timeframe?: ChartTimeframe;
 }
 
 function lastFinite(values: number[]): number | undefined {
@@ -22,91 +28,92 @@ function roundPrice(value: number): number {
   return Number(value.toFixed(2));
 }
 
-function hasHigherLows(candles: CandlePoint[]): boolean {
-  const recent = candles.slice(-10);
+function buildReasons(analysis: MarketTechnicalAnalysis): string[] {
+  const {
+    breakout,
+    currentPrice,
+    marketStructure,
+    movingAverages,
+    supportResistance,
+    trend,
+    trendStrength,
+    volume,
+  } = analysis;
 
-  if (recent.length < 6) {
-    return false;
-  }
-
-  const midpoint = Math.floor(recent.length / 2);
-  const firstHalfLow = Math.min(...recent.slice(0, midpoint).map((c) => c.low));
-  const secondHalfLow = Math.min(...recent.slice(midpoint).map((c) => c.low));
-
-  return secondHalfLow > firstHalfLow;
-}
-
-function hasLowerHighs(candles: CandlePoint[]): boolean {
-  const recent = candles.slice(-10);
-
-  if (recent.length < 6) {
-    return false;
-  }
-
-  const midpoint = Math.floor(recent.length / 2);
-  const firstHalfHigh = Math.max(
-    ...recent.slice(0, midpoint).map((c) => c.high),
-  );
-  const secondHalfHigh = Math.max(...recent.slice(midpoint).map((c) => c.high));
-
-  return secondHalfHigh < firstHalfHigh;
-}
-
-function buildReasons(input: {
-  candles: CandlePoint[];
-  currentPrice: number;
-  sma7?: number;
-  sma25?: number;
-  trend: MarketTechnicalAnalysis["trend"];
-  support?: number;
-  resistance?: number;
-}): string[] {
-  const { candles, currentPrice, sma7, sma25, trend, support, resistance } =
-    input;
-
-  if (candles.length === 0) {
+  if (currentPrice === 0) {
     return ["Real candle data is unavailable for this market."];
   }
 
-  if (candles.length < 25) {
-    return ["Not enough real candle history is available for reliable analysis."];
+  if (marketStructure.structure === "insufficient-data") {
+    return [
+      "Not enough real candle history is available for reliable market structure analysis.",
+    ];
   }
 
   const reasons: string[] = [];
 
-  if (sma25 !== undefined) {
-    if (currentPrice > sma25) {
+  if (movingAverages.sma25 !== undefined) {
+    if (currentPrice > movingAverages.sma25) {
       reasons.push("Price is trading above SMA25");
-    } else if (currentPrice < sma25) {
+    } else if (currentPrice < movingAverages.sma25) {
       reasons.push("Price is below SMA25");
     }
   }
 
-  if (sma7 !== undefined && sma25 !== undefined) {
-    if (sma7 > sma25) {
+  if (
+    movingAverages.sma7 !== undefined &&
+    movingAverages.sma25 !== undefined
+  ) {
+    if (movingAverages.sma7 > movingAverages.sma25) {
       reasons.push("Short-term momentum is positive");
-    } else if (sma7 < sma25) {
+    } else if (movingAverages.sma7 < movingAverages.sma25) {
       reasons.push("Short-term momentum is negative");
     }
   }
 
-  if (trend === "bullish" && hasHigherLows(candles)) {
-    reasons.push("Recent candles show higher lows");
+  if (marketStructure.structure === "higher-highs-higher-lows") {
+    reasons.push("Recent structure shows higher highs and higher lows");
   }
 
-  if (trend === "bearish" && hasLowerHighs(candles)) {
-    reasons.push("Recent candles show lower highs");
+  if (marketStructure.structure === "lower-highs-lower-lows") {
+    reasons.push("Recent structure shows lower highs and lower lows");
+  }
+
+  if (marketStructure.structure === "mixed") {
+    reasons.push("Short-term structure is mixed");
+  }
+
+  if (marketStructure.structure === "sideways") {
+    reasons.push("Market structure is sideways");
+  }
+
+  if (breakout.direction === "breakout-up") {
+    reasons.push("Breakout above resistance detected");
+  }
+
+  if (breakout.direction === "breakout-down") {
+    reasons.push("Breakdown below support detected");
   }
 
   if (
     trend === "neutral" &&
-    support !== undefined &&
-    resistance !== undefined &&
-    currentPrice > support &&
-    currentPrice < resistance
+    supportResistance.support !== undefined &&
+    supportResistance.resistance !== undefined &&
+    currentPrice > supportResistance.support &&
+    currentPrice < supportResistance.resistance
   ) {
     reasons.push("Price is consolidating between support and resistance");
   }
+
+  if (volume.confirmation === "confirmed") {
+    reasons.push("Volume confirms the recent move");
+  }
+
+  if (volume.confirmation === "weak") {
+    reasons.push("Volume confirmation is weak");
+  }
+
+  reasons.push(`Trend strength is ${trendStrength.strength}`);
 
   if (reasons.length === 0) {
     reasons.push("Market structure is mixed across recent candles");
@@ -118,6 +125,7 @@ function buildReasons(input: {
 export function analyzeCandles({
   symbol,
   candles,
+  timeframe = "1D",
 }: AnalyzeCandlesInput): MarketTechnicalAnalysis {
   const sortedCandles = [...candles].sort((first, second) => {
     return first.time - second.time;
@@ -130,28 +138,54 @@ export function analyzeCandles({
   const supportResistance = detectSupportResistance(sortedCandles);
   const volatility = calculateVolatility(sortedCandles);
   const trend = detectTrend({ closes, price: currentPrice });
-
   const movingAverages = {
     ...(sma7 !== undefined ? { sma7: roundPrice(sma7) } : {}),
     ...(sma25 !== undefined ? { sma25: roundPrice(sma25) } : {}),
     ...(sma99 !== undefined ? { sma99: roundPrice(sma99) } : {}),
   };
+  const marketStructure = analyzeMarketStructure(sortedCandles);
+  const breakout = detectBreakout({
+    candles: sortedCandles,
+    support: supportResistance.support,
+    resistance: supportResistance.resistance,
+  });
+  const trendStrength = calculateTrendStrength({
+    trend,
+    movingAverages,
+    marketStructure,
+    candles: sortedCandles,
+  });
+  const volume = analyzeVolumeConfirmation(sortedCandles);
 
-  return {
+  const analysisWithoutReasons: Omit<MarketTechnicalAnalysis, "reasons" | "summary"> = {
     symbol,
     currentPrice: roundPrice(currentPrice),
     movingAverages,
     supportResistance,
     volatility,
     trend,
-    reasons: buildReasons({
-      candles: sortedCandles,
-      currentPrice,
-      sma7,
-      sma25,
-      trend,
-      support: supportResistance.support,
-      resistance: supportResistance.resistance,
-    }),
+    marketStructure,
+    breakout,
+    trendStrength,
+    volume,
+  };
+  const analysisWithSummaryInput: MarketTechnicalAnalysis = {
+    ...analysisWithoutReasons,
+    summary: "",
+    reasons: [],
+  };
+  const summary = summarizeTimeframeAnalysis({
+    timeframe,
+    analysis: analysisWithSummaryInput,
+  }).summary;
+  const analysis: MarketTechnicalAnalysis = {
+    ...analysisWithoutReasons,
+    summary,
+    reasons: [],
+  };
+
+  return {
+    ...analysis,
+    reasons: buildReasons(analysis),
   };
 }
