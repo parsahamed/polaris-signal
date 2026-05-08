@@ -1,5 +1,4 @@
 import type { ChartDataProvider } from "@/lib/market-data/chart-data-provider";
-import { MockChartDataProvider } from "@/lib/market-data/mock-chart-data.provider";
 import type {
   CandlePoint,
   CandleRequestInput,
@@ -35,18 +34,12 @@ function roundPrice(value: number): number {
 }
 
 export class CoinGeckoChartDataProvider implements ChartDataProvider {
-  private readonly fallbackProvider: ChartDataProvider;
-
-  constructor(fallbackProvider: ChartDataProvider = new MockChartDataProvider()) {
-    this.fallbackProvider = fallbackProvider;
-  }
-
   async getCandles(input: CandleRequestInput): Promise<CandlePoint[]> {
     const symbol = normalizeSymbol(input.symbol);
     const coinId = COINGECKO_IDS_BY_SYMBOL[symbol];
 
     if (!coinId) {
-      return this.fallbackProvider.getCandles(input);
+      return [];
     }
 
     try {
@@ -72,7 +65,7 @@ export class CoinGeckoChartDataProvider implements ChartDataProvider {
       });
 
       if (!response.ok) {
-        return this.fallbackProvider.getCandles(input);
+        return [];
       }
 
       const payload = (await response.json()) as CoinGeckoOhlcPoint[];
@@ -84,6 +77,7 @@ export class CoinGeckoChartDataProvider implements ChartDataProvider {
             high: roundPrice(high),
             low: roundPrice(low),
             close: roundPrice(close),
+            source: "coingecko" as const,
           };
         })
         .filter((candle) => {
@@ -91,14 +85,14 @@ export class CoinGeckoChartDataProvider implements ChartDataProvider {
         });
 
       if (candles.length === 0) {
-        return input.before ? [] : this.fallbackProvider.getCandles(input);
+        return [];
       }
 
       return candles.filter((candle, index, list) => {
         return list.findIndex((item) => item.time === candle.time) === index;
       });
     } catch {
-      return this.fallbackProvider.getCandles(input);
+      return [];
     }
   }
 }

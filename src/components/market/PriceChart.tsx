@@ -22,7 +22,11 @@ import {
 } from "@/components/ui/card";
 import { formatMarketNumber } from "@/lib/market-data/mock-market-metrics";
 import { cn } from "@/lib/utils";
-import type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
+import type {
+  CandlePoint,
+  CandleSource,
+  ChartTimeframe,
+} from "@/types/chart.types";
 import type { MarketDataSource } from "@/types/market-data.types";
 
 interface PriceChartProps {
@@ -49,6 +53,13 @@ const sourceDescriptions: Record<MarketDataSource, string> = {
   wallex: "local exchange price action",
 };
 
+const candleSourceLabels: Record<CandleSource, string> = {
+  binance: "Binance",
+  okx: "OKX",
+  coingecko: "CoinGecko",
+  mock: "Mock",
+};
+
 export function PriceChart({
   symbol,
   pair,
@@ -66,6 +77,7 @@ export function PriceChart({
 }: PriceChartProps) {
   const isPositiveChange = change24h >= 0;
   const hasChartData = data.length > 0;
+  const candleSource = data.find((candle) => candle.source)?.source;
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -225,6 +237,7 @@ export function PriceChart({
           <CardTitle>{pair} Price Chart</CardTitle>
           <CardDescription>
             {symbol} {sourceDescriptions[source]}
+            {candleSource ? ` · Candles: ${candleSourceLabels[candleSource]}` : ""}
           </CardDescription>
         </div>
 

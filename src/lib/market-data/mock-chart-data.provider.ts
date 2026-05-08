@@ -57,6 +57,7 @@ export class MockChartDataProvider implements ChartDataProvider {
         high: roundPrice(high),
         low: roundPrice(low),
         close: roundPrice(close),
+        source: "mock" as const,
       };
     });
   }
