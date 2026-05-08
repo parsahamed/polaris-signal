@@ -6,22 +6,31 @@ export class FallbackChartDataProvider implements ChartDataProvider {
 
   async getCandles(input: CandleRequestInput): Promise<CandlePoint[]> {
     for (const provider of this.providers) {
+      const providerName = provider.constructor.name.replace(
+        "ChartDataProvider",
+        "",
+      );
+
       try {
         const candles = await provider.getCandles(input);
 
         if (candles.length > 0) {
+          if (process.env.NODE_ENV === "development") {
+            console.log(`[ChartProvider] Using ${providerName} candles`);
+          }
+
           return candles;
         }
 
         if (process.env.NODE_ENV === "development") {
           console.log(
-            `[Candles] ${provider.constructor.name} returned no candles; trying fallback.`,
+            `[ChartProvider] ${providerName} returned no candles, trying fallback`,
           );
         }
       } catch (error) {
         if (process.env.NODE_ENV === "development") {
           console.log(
-            `[Candles] ${provider.constructor.name} failed; trying fallback.`,
+            `[ChartProvider] ${providerName} failed, trying fallback`,
             error,
           );
         }

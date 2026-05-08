@@ -1,4 +1,4 @@
-export type CandleSource = "binance" | "okx" | "coingecko" | "mock";
+export type CandleDataSource = "binance" | "okx" | "coingecko";
 
 export interface CandlePoint {
   time: number;
@@ -6,7 +6,7 @@ export interface CandlePoint {
   high: number;
   low: number;
   close: number;
-  source?: CandleSource;
+  source?: CandleDataSource;
 }
 
 export type ChartTimeframe = "1H" | "4H" | "1D" | "1W";

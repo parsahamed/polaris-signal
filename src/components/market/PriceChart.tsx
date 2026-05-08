@@ -24,7 +24,7 @@ import { formatMarketNumber } from "@/lib/market-data/mock-market-metrics";
 import { cn } from "@/lib/utils";
 import type {
   CandlePoint,
-  CandleSource,
+  CandleDataSource,
   ChartTimeframe,
 } from "@/types/chart.types";
 import type { MarketDataSource } from "@/types/market-data.types";
@@ -53,11 +53,10 @@ const sourceDescriptions: Record<MarketDataSource, string> = {
   wallex: "local exchange price action",
 };
 
-const candleSourceLabels: Record<CandleSource, string> = {
+const candleSourceLabels: Record<CandleDataSource, string> = {
   binance: "Binance",
   okx: "OKX",
   coingecko: "CoinGecko",
-  mock: "Mock",
 };
 
 export function PriceChart({
@@ -298,7 +297,7 @@ export function PriceChart({
           </div>
         ) : (
           <div className="flex h-[280px] items-center justify-center rounded-lg border bg-background/40 text-sm text-muted-foreground">
-            No chart data available
+            No real chart data available for this market.
           </div>
         )}
       </CardContent>

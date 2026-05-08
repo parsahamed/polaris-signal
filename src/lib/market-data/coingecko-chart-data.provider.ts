@@ -1,4 +1,5 @@
 import type { ChartDataProvider } from "@/lib/market-data/chart-data-provider";
+import { getExchangeSymbols } from "@/lib/market-data/exchange-symbols";
 import type {
   CandlePoint,
   CandleRequestInput,
@@ -6,12 +7,6 @@ import type {
 } from "@/types/chart.types";
 
 const COINGECKO_COIN_URL = "https://api.coingecko.com/api/v3/coins";
-
-const COINGECKO_IDS_BY_SYMBOL: Record<string, string> = {
-  BTC: "bitcoin",
-  ETH: "ethereum",
-  XAUT: "tether-gold",
-};
 
 const DAYS_BY_TIMEFRAME: Record<ChartTimeframe, string> = {
   "1H": "1",
@@ -35,8 +30,7 @@ function roundPrice(value: number): number {
 
 export class CoinGeckoChartDataProvider implements ChartDataProvider {
   async getCandles(input: CandleRequestInput): Promise<CandlePoint[]> {
-    const symbol = normalizeSymbol(input.symbol);
-    const coinId = COINGECKO_IDS_BY_SYMBOL[symbol];
+    const coinId = getExchangeSymbols(normalizeSymbol(input.symbol)).coingecko;
 
     if (!coinId) {
       return [];

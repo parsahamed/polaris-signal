@@ -6,6 +6,7 @@ import type {
   ChartTimeframe,
 } from "@/types/chart.types";
 
+// Mock provider is only for isolated development/testing, never for trading analysis.
 const POINTS_BY_TIMEFRAME: Record<ChartTimeframe, number> = {
   "1H": 12,
   "4H": 16,
@@ -57,7 +58,6 @@ export class MockChartDataProvider implements ChartDataProvider {
         high: roundPrice(high),
         low: roundPrice(low),
         close: roundPrice(close),
-        source: "mock" as const,
       };
     });
   }
