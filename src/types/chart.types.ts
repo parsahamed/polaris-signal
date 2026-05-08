@@ -7,3 +7,9 @@ export interface CandlePoint {
 }
 
 export type ChartTimeframe = "1H" | "4H" | "1D" | "1W";
+
+export interface CandleRequestInput {
+  symbol: string;
+  timeframe: ChartTimeframe;
+  before?: number;
+}

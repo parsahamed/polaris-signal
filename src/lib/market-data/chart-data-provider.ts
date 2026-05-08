@@ -1,8 +1,5 @@
-import type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
+import type { CandlePoint, CandleRequestInput } from "@/types/chart.types";
 
 export interface ChartDataProvider {
-  getCandles(input: {
-    symbol: string;
-    timeframe: ChartTimeframe;
-  }): Promise<CandlePoint[]>;
+  getCandles(input: CandleRequestInput): Promise<CandlePoint[]>;
 }

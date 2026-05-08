@@ -1,6 +1,10 @@
 import type { ChartDataProvider } from "@/lib/market-data/chart-data-provider";
 import { MockChartDataProvider } from "@/lib/market-data/mock-chart-data.provider";
-import type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
+import type {
+  CandlePoint,
+  CandleRequestInput,
+  ChartTimeframe,
+} from "@/types/chart.types";
 
 const COINGECKO_COIN_URL = "https://api.coingecko.com/api/v3/coins";
 
@@ -37,10 +41,7 @@ export class CoinGeckoChartDataProvider implements ChartDataProvider {
     this.fallbackProvider = fallbackProvider;
   }
 
-  async getCandles(input: {
-    symbol: string;
-    timeframe: ChartTimeframe;
-  }): Promise<CandlePoint[]> {
+  async getCandles(input: CandleRequestInput): Promise<CandlePoint[]> {
     const symbol = normalizeSymbol(input.symbol);
     const coinId = COINGECKO_IDS_BY_SYMBOL[symbol];
 
@@ -53,6 +54,11 @@ export class CoinGeckoChartDataProvider implements ChartDataProvider {
 
       url.searchParams.set("vs_currency", "usd");
       url.searchParams.set("days", DAYS_BY_TIMEFRAME[input.timeframe]);
+
+      if (input.before) {
+        // TODO: CoinGecko /ohlc does not support exact historical pagination.
+        // Keep this provider boundary so a range-capable source can replace it.
+      }
 
       if (process.env.NODE_ENV === "development") {
         console.log("[CoinGecko] Fetching OHLC candles:", url.toString());
@@ -70,21 +76,27 @@ export class CoinGeckoChartDataProvider implements ChartDataProvider {
       }
 
       const payload = (await response.json()) as CoinGeckoOhlcPoint[];
-      const candles = payload.map(([timestamp, open, high, low, close]) => {
-        return {
-          time: Math.floor(timestamp / 1000),
-          open: roundPrice(open),
-          high: roundPrice(high),
-          low: roundPrice(low),
-          close: roundPrice(close),
-        };
-      });
+      const candles = payload
+        .map(([timestamp, open, high, low, close]) => {
+          return {
+            time: Math.floor(timestamp / 1000),
+            open: roundPrice(open),
+            high: roundPrice(high),
+            low: roundPrice(low),
+            close: roundPrice(close),
+          };
+        })
+        .filter((candle) => {
+          return input.before ? Number(candle.time) < input.before : true;
+        });
 
       if (candles.length === 0) {
-        return this.fallbackProvider.getCandles(input);
+        return input.before ? [] : this.fallbackProvider.getCandles(input);
       }
 
-      return candles;
+      return candles.filter((candle, index, list) => {
+        return list.findIndex((item) => item.time === candle.time) === index;
+      });
     } catch {
       return this.fallbackProvider.getCandles(input);
     }

@@ -1,6 +1,10 @@
 import { mockMarketData } from "@/lib/market-data/mock-market-data";
 import type { ChartDataProvider } from "@/lib/market-data/chart-data-provider";
-import type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
+import type {
+  CandlePoint,
+  CandleRequestInput,
+  ChartTimeframe,
+} from "@/types/chart.types";
 
 const POINTS_BY_TIMEFRAME: Record<ChartTimeframe, number> = {
   "1H": 12,
@@ -23,10 +27,7 @@ function roundPrice(value: number): number {
 }
 
 export class MockChartDataProvider implements ChartDataProvider {
-  async getCandles(input: {
-    symbol: string;
-    timeframe: ChartTimeframe;
-  }): Promise<CandlePoint[]> {
+  async getCandles(input: CandleRequestInput): Promise<CandlePoint[]> {
     const normalizedSymbol = input.symbol.trim().toUpperCase();
     const marketData = mockMarketData.find((item) => {
       return item.symbol === normalizedSymbol;
@@ -36,8 +37,10 @@ export class MockChartDataProvider implements ChartDataProvider {
     const pointCount = POINTS_BY_TIMEFRAME[input.timeframe];
     const direction = seed % 2 === 0 ? 1 : -1;
     const intervalSeconds = input.timeframe === "1W" ? 21600 : 3600;
-    const startTime =
-      Math.floor(Date.now() / 1000) - (pointCount - 1) * intervalSeconds;
+    const endTime = input.before
+      ? input.before - intervalSeconds
+      : Math.floor(Date.now() / 1000);
+    const startTime = endTime - (pointCount - 1) * intervalSeconds;
 
     return Array.from({ length: pointCount }, (_, index) => {
       const wave = Math.sin((index + seed) * 0.62) * 0.012;

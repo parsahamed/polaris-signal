@@ -1,10 +1,9 @@
 import { getChartDataProvider } from "@/lib/market-data/chart-data-provider.factory";
-import type { CandlePoint, ChartTimeframe } from "@/types/chart.types";
+import type { CandlePoint, CandleRequestInput } from "@/types/chart.types";
 
-export async function getCandles(input: {
-  symbol: string;
-  timeframe: ChartTimeframe;
-}): Promise<CandlePoint[]> {
+export async function getCandles(
+  input: CandleRequestInput,
+): Promise<CandlePoint[]> {
   const provider = getChartDataProvider();
 
   return provider.getCandles(input);

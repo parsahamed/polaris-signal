@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { MarketHeader } from "@/components/market/MarketHeader";
 import { PriceChart } from "@/components/market/PriceChart";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  useMarketCandlesQuery,
+  useMarketCandlesInfiniteQuery,
   useMarketDetailQuery,
 } from "@/hooks/use-market-queries";
 import type { ChartTimeframe } from "@/types/chart.types";
@@ -52,7 +52,20 @@ function DetailLoadingState() {
 export function MarketDetailClient({ symbol }: MarketDetailClientProps) {
   const [timeframe, setTimeframe] = useState<ChartTimeframe>("1D");
   const detailQuery = useMarketDetailQuery(symbol);
-  const candlesQuery = useMarketCandlesQuery(symbol, timeframe);
+  const candlesQuery = useMarketCandlesInfiniteQuery(symbol, timeframe);
+  const candles = useMemo(() => {
+    const candlesByTime = new Map(
+      candlesQuery.data?.pages
+        .flat()
+        .map((candle) => {
+          return [candle.time, candle] as const;
+        }) ?? [],
+    );
+
+    return Array.from(candlesByTime.values()).sort((first, second) => {
+      return Number(first.time) - Number(second.time);
+    });
+  }, [candlesQuery.data]);
 
   if (detailQuery.isLoading) {
     return <DetailLoadingState />;
@@ -80,7 +93,6 @@ export function MarketDetailClient({ symbol }: MarketDetailClientProps) {
   }
 
   const { analysis, market, marketData } = detailQuery.data;
-  const candles = candlesQuery.data ?? [];
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-10">
@@ -110,6 +122,11 @@ export function MarketDetailClient({ symbol }: MarketDetailClientProps) {
             onTimeframeChange={setTimeframe}
             isLoading={candlesQuery.isLoading}
             isFetching={candlesQuery.isFetching}
+            onLoadOlderCandles={() => {
+              void candlesQuery.fetchNextPage();
+            }}
+            hasMoreCandles={candlesQuery.hasNextPage}
+            isLoadingOlderCandles={candlesQuery.isFetchingNextPage}
           />
           <WhySignal reasons={analysis.signal.reasons} />
         </div>

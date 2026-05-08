@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import {
   fetchMarketCandles,
@@ -33,6 +33,34 @@ export function useMarketCandlesQuery(
   return useQuery({
     queryKey: ["candles", symbol, timeframe],
     queryFn: () => fetchMarketCandles(symbol, timeframe),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
+    enabled: Boolean(symbol),
+  });
+}
+
+export function useMarketCandlesInfiniteQuery(
+  symbol: string,
+  timeframe: ChartTimeframe,
+) {
+  return useInfiniteQuery({
+    queryKey: ["candles-infinite", symbol, timeframe],
+    queryFn: ({ pageParam }) => {
+      return fetchMarketCandles(symbol, timeframe, pageParam);
+    },
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.length === 0) {
+        return undefined;
+      }
+
+      return Math.min(
+        ...lastPage.map((candle) => {
+          return Number(candle.time);
+        }),
+      );
+    },
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 60 * 24,
     refetchOnWindowFocus: false,

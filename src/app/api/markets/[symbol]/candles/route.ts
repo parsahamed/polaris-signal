@@ -15,6 +15,8 @@ export async function GET(request: Request, { params }: RouteParams) {
   const { searchParams } = new URL(request.url);
   const { symbol } = await params;
   const timeframe = searchParams.get("timeframe") ?? "1D";
+  const beforeParam = searchParams.get("before");
+  const before = beforeParam ? Number(beforeParam) : undefined;
 
   if (!allowedTimeframes.includes(timeframe as ChartTimeframe)) {
     return NextResponse.json(
@@ -23,9 +25,17 @@ export async function GET(request: Request, { params }: RouteParams) {
     );
   }
 
+  if (beforeParam && (!Number.isFinite(before) || Number(before) <= 0)) {
+    return NextResponse.json(
+      { message: "Invalid before timestamp" },
+      { status: 400 },
+    );
+  }
+
   const candles = await getCandles({
     symbol,
     timeframe: timeframe as ChartTimeframe,
+    before,
   });
 
   return NextResponse.json(candles);

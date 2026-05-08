@@ -29,9 +29,18 @@ export async function fetchMarketDetail(
 export async function fetchMarketCandles(
   symbol: string,
   timeframe: ChartTimeframe,
+  before?: number,
 ): Promise<CandlePoint[]> {
+  const searchParams = new URLSearchParams({
+    timeframe,
+  });
+
+  if (before) {
+    searchParams.set("before", String(before));
+  }
+
   const response = await fetch(
-    `/api/markets/${symbol}/candles?timeframe=${timeframe}`,
+    `/api/markets/${symbol}/candles?${searchParams.toString()}`,
   );
 
   if (!response.ok) {

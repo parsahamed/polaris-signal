@@ -4,6 +4,9 @@ import {
   CandlestickSeries,
   createChart,
   type IChartApi,
+  type ISeriesApi,
+  type Logical,
+  type LogicalRange,
   type UTCTimestamp,
 } from "lightweight-charts";
 import { useEffect, useRef } from "react";
@@ -33,6 +36,9 @@ interface PriceChartProps {
   onTimeframeChange: (timeframe: ChartTimeframe) => void;
   isLoading?: boolean;
   isFetching?: boolean;
+  onLoadOlderCandles?: () => void;
+  hasMoreCandles?: boolean;
+  isLoadingOlderCandles?: boolean;
 }
 
 const timeframes: ChartTimeframe[] = ["1H", "4H", "1D", "1W"];
@@ -54,15 +60,44 @@ export function PriceChart({
   onTimeframeChange,
   isLoading = false,
   isFetching = false,
+  onLoadOlderCandles,
+  hasMoreCandles = false,
+  isLoadingOlderCandles = false,
 }: PriceChartProps) {
   const isPositiveChange = change24h >= 0;
+  const hasChartData = data.length > 0;
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const shouldFitContentRef = useRef(true);
+  const loadMoreGuardRef = useRef(false);
+  const dataRef = useRef<CandlePoint[]>([]);
+  const hasMoreCandlesRef = useRef(hasMoreCandles);
+  const isLoadingOlderCandlesRef = useRef(isLoadingOlderCandles);
+  const onLoadOlderCandlesRef = useRef(onLoadOlderCandles);
+
+  useEffect(() => {
+    shouldFitContentRef.current = true;
+    loadMoreGuardRef.current = false;
+    dataRef.current = [];
+  }, [symbol, timeframe, hasChartData]);
+
+  useEffect(() => {
+    hasMoreCandlesRef.current = hasMoreCandles;
+    isLoadingOlderCandlesRef.current = isLoadingOlderCandles;
+    onLoadOlderCandlesRef.current = onLoadOlderCandles;
+  }, [hasMoreCandles, isLoadingOlderCandles, onLoadOlderCandles]);
+
+  useEffect(() => {
+    if (!isLoadingOlderCandles) {
+      loadMoreGuardRef.current = false;
+    }
+  }, [isLoadingOlderCandles]);
 
   useEffect(() => {
     const container = chartContainerRef.current;
 
-    if (!container || data.length === 0) {
+    if (!container || chartRef.current) {
       return;
     }
 
@@ -99,25 +134,88 @@ export function PriceChart({
       wickDownColor: "#ef4444",
     });
 
-    candlestickSeries.setData(
-      data.map((candle) => {
-        return {
-          time: candle.time as UTCTimestamp,
-          open: candle.open,
-          high: candle.high,
-          low: candle.low,
-          close: candle.close,
-        };
-      }),
-    );
+    const handleVisibleRangeChange = () => {
+      const logicalRange = chart.timeScale().getVisibleLogicalRange();
 
-    chart.timeScale().fitContent();
+      if (
+        !logicalRange ||
+        !hasMoreCandlesRef.current ||
+        isLoadingOlderCandlesRef.current
+      ) {
+        return;
+      }
+
+      const barsInfo = candlestickSeries.barsInLogicalRange(logicalRange);
+
+      if (
+        barsInfo &&
+        barsInfo.barsBefore < 8 &&
+        !loadMoreGuardRef.current
+      ) {
+        loadMoreGuardRef.current = true;
+        onLoadOlderCandlesRef.current?.();
+      }
+    };
+
+    chart
+      .timeScale()
+      .subscribeVisibleLogicalRangeChange(handleVisibleRangeChange);
     chartRef.current = chart;
+    seriesRef.current = candlestickSeries;
 
     return () => {
+      chart
+        .timeScale()
+        .unsubscribeVisibleLogicalRangeChange(handleVisibleRangeChange);
       chart.remove();
       chartRef.current = null;
+      seriesRef.current = null;
     };
+  }, [symbol, timeframe]);
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    const series = seriesRef.current;
+
+    if (!chart || !series || data.length === 0) {
+      dataRef.current = data;
+      return;
+    }
+
+    const previousData = dataRef.current;
+    const previousRange = chart.timeScale().getVisibleLogicalRange();
+    const previousFirstTime = previousData[0]?.time;
+    const nextData = data.map((candle) => {
+      return {
+        time: candle.time as UTCTimestamp,
+        open: candle.open,
+        high: candle.high,
+        low: candle.low,
+        close: candle.close,
+      };
+    });
+
+    series.setData(nextData);
+
+    if (shouldFitContentRef.current) {
+      chart.timeScale().fitContent();
+      shouldFitContentRef.current = false;
+    } else if (previousRange && previousFirstTime !== undefined) {
+      const oldFirstIndex = data.findIndex((candle) => {
+        return candle.time === previousFirstTime;
+      });
+
+      if (oldFirstIndex > 0) {
+        const nextRange: LogicalRange = {
+          from: (previousRange.from + oldFirstIndex) as Logical,
+          to: (previousRange.to + oldFirstIndex) as Logical,
+        };
+
+        chart.timeScale().setVisibleLogicalRange(nextRange);
+      }
+    }
+
+    dataRef.current = data;
   }, [data]);
 
   return (
@@ -170,6 +268,11 @@ export function PriceChart({
 
         {isFetching ? (
           <p className="text-xs text-muted-foreground">Updating chart...</p>
+        ) : null}
+        {isLoadingOlderCandles ? (
+          <p className="text-xs text-muted-foreground">
+            Loading older candles...
+          </p>
         ) : null}
 
         {isLoading ? (
