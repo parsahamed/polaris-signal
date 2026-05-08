@@ -10,6 +10,8 @@ import {
   signalLabels,
 } from "@/lib/market-data/mock-market-metrics";
 import { cn } from "@/lib/utils";
+import type { TrendDirection } from "@/lib/analysis/indicators/trend";
+import type { VolatilityLevel } from "@/lib/analysis/indicators/volatility";
 import type { RiskLevel, SignalStatus } from "@/types/signal.types";
 
 interface SignalPanelProps {
@@ -17,6 +19,8 @@ interface SignalPanelProps {
   confidence: number;
   riskLevel: RiskLevel;
   reasons: string[];
+  trend?: TrendDirection;
+  volatility?: VolatilityLevel;
 }
 
 const signalClasses: Record<SignalStatus, string> = {
@@ -31,6 +35,8 @@ export function SignalPanel({
   confidence,
   riskLevel,
   reasons,
+  trend,
+  volatility,
 }: SignalPanelProps) {
   return (
     <Card className="border-border/70">
@@ -38,7 +44,9 @@ export function SignalPanel({
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle>Signal</CardTitle>
-            <CardDescription>Signal engine v1 market insight.</CardDescription>
+            <CardDescription>
+              Candle-based market structure insight.
+            </CardDescription>
           </div>
           <Badge
             variant={signal === "danger" ? "destructive" : "outline"}
@@ -58,6 +66,18 @@ export function SignalPanel({
             <p className="text-muted-foreground">Risk level</p>
             <p className="mt-1 font-medium capitalize">{riskLevel}</p>
           </div>
+          {trend ? (
+            <div>
+              <p className="text-muted-foreground">Trend</p>
+              <p className="mt-1 font-medium capitalize">{trend}</p>
+            </div>
+          ) : null}
+          {volatility ? (
+            <div>
+              <p className="text-muted-foreground">Volatility</p>
+              <p className="mt-1 font-medium capitalize">{volatility}</p>
+            </div>
+          ) : null}
         </div>
         <ul className="space-y-2 text-sm text-muted-foreground">
           {reasons.map((reason) => (

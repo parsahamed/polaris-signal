@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { AnalysisOverview } from "@/components/market/AnalysisOverview";
 import { MarketHeader } from "@/components/market/MarketHeader";
 import { PriceChart } from "@/components/market/PriceChart";
 import { SignalPanel } from "@/components/market/SignalPanel";
@@ -21,7 +22,10 @@ import {
   useMarketCandlesInfiniteQuery,
   useMarketDetailQuery,
 } from "@/hooks/use-market-queries";
+import { useMarketAnalysis } from "@/hooks/use-market-analysis";
+import type { MarketTechnicalAnalysis } from "@/types/analysis.types";
 import type { ChartTimeframe } from "@/types/chart.types";
+import type { RiskLevel, Signal } from "@/types/signal.types";
 
 interface MarketDetailClientProps {
   symbol: string;
@@ -49,6 +53,48 @@ function DetailLoadingState() {
   );
 }
 
+function riskLevelFromVolatility(
+  volatility: MarketTechnicalAnalysis["volatility"],
+): RiskLevel {
+  return volatility;
+}
+
+function signalFromAnalysis(analysis: MarketTechnicalAnalysis): Signal {
+  if (analysis.currentPrice === 0) {
+    return {
+      status: "neutral",
+      confidence: 0,
+      riskLevel: "low",
+      reasons: analysis.reasons,
+    };
+  }
+
+  if (analysis.trend === "bullish") {
+    return {
+      status: "bullish",
+      confidence: analysis.volatility === "high" ? 60 : 70,
+      riskLevel: riskLevelFromVolatility(analysis.volatility),
+      reasons: analysis.reasons,
+    };
+  }
+
+  if (analysis.trend === "bearish") {
+    return {
+      status: "bearish",
+      confidence: analysis.volatility === "high" ? 60 : 70,
+      riskLevel: riskLevelFromVolatility(analysis.volatility),
+      reasons: analysis.reasons,
+    };
+  }
+
+  return {
+    status: "neutral",
+    confidence: 50,
+    riskLevel: riskLevelFromVolatility(analysis.volatility),
+    reasons: analysis.reasons,
+  };
+}
+
 export function MarketDetailClient({ symbol }: MarketDetailClientProps) {
   const [timeframe, setTimeframe] = useState<ChartTimeframe>("1D");
   const detailQuery = useMarketDetailQuery(symbol);
@@ -66,6 +112,10 @@ export function MarketDetailClient({ symbol }: MarketDetailClientProps) {
       return Number(first.time) - Number(second.time);
     });
   }, [candlesQuery.data]);
+  const technicalAnalysis = useMarketAnalysis(symbol, candles);
+  const technicalSignal = useMemo(() => {
+    return signalFromAnalysis(technicalAnalysis);
+  }, [technicalAnalysis]);
 
   if (detailQuery.isLoading) {
     return <DetailLoadingState />;
@@ -105,7 +155,7 @@ export function MarketDetailClient({ symbol }: MarketDetailClientProps) {
         market={market}
         price={analysis.price}
         change24h={analysis.change24h}
-        signal={analysis.signal.status}
+        signal={technicalSignal.status}
         source={marketData.source}
       />
 
@@ -128,19 +178,22 @@ export function MarketDetailClient({ symbol }: MarketDetailClientProps) {
             hasMoreCandles={candlesQuery.hasNextPage}
             isLoadingOlderCandles={candlesQuery.isFetchingNextPage}
           />
-          <WhySignal reasons={analysis.signal.reasons} />
+          <WhySignal reasons={technicalAnalysis.reasons} />
         </div>
 
         <aside className="flex flex-col gap-6">
           <SignalPanel
-            signal={analysis.signal.status}
-            confidence={analysis.signal.confidence}
-            riskLevel={analysis.signal.riskLevel}
-            reasons={analysis.signal.reasons}
+            signal={technicalSignal.status}
+            confidence={technicalSignal.confidence}
+            riskLevel={technicalSignal.riskLevel}
+            reasons={technicalAnalysis.reasons}
+            trend={technicalAnalysis.trend}
+            volatility={technicalAnalysis.volatility}
           />
+          <AnalysisOverview analysis={technicalAnalysis} />
           <SupportResistance
-            support={analysis.zones.support}
-            resistance={analysis.zones.resistance}
+            support={technicalAnalysis.supportResistance.support}
+            resistance={technicalAnalysis.supportResistance.resistance}
           />
         </aside>
       </div>
